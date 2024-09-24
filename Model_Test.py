@@ -1,7 +1,8 @@
 import tensorflow as tf
+from tensorflow.keras import models
 
 # Load model
-model = tf.keras.preprocessing.image.load_model('model.h5')
+model = tf.keras.models.load_model('model.keras')
 
 # Test func
 def test(model, img_path):
@@ -13,7 +14,7 @@ def test(model, img_path):
     return tf.argmax(predict, axis=1).numpy()[0]
 
 # Test img dir
-test_dir = "test"
+test_dir = "test/NORMAL/"                   # changes dir as necessary
 test_img = tf.io.gfile.glob(test_dir + '*')
 
 # Predict
