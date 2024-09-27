@@ -9,7 +9,7 @@ import numpy as np
 
 # Custom Dataset Class
 class CustomImageDataset(Dataset):
-    def __init__(self, directory, transform=None):
+    def __init__(self, directory, transform=None, max_samples=100):
         self.directory = directory
         self.transform = transform
         self.images = []
@@ -21,6 +21,12 @@ class CustomImageDataset(Dataset):
                 if img_file.endswith(('.jpg', '.jpeg', '.png')):
                     self.images.append(os.path.join(label_dir, img_file))
                     self.labels.append(0 if label == 'NORMAL' else 1)  # 0 for normal, 1 for pneumonia
+                    # Stop if we've reached the maximum number of samples
+
+                    if len(self.images) >= max_samples:
+                        break
+                if len(self.images) >= max_samples:
+                    break
 
     def __len__(self):
         return len(self.images)
@@ -172,7 +178,7 @@ def predict_all_images(model, image_directory):
 
 if __name__ == '__main__':
     # Parameters
-    batch_size = 32
+    batch_size = 8
     num_epochs = 10
     learning_rate = 0.001
     num_classes = 2  # Binary classification: normal and pneumonia
@@ -183,7 +189,7 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     # Data Preparation
-    dataset = CustomImageDataset(directory=dataset_path, transform=transform_image)
+    dataset = CustomImageDataset(directory=dataset_path, transform=transform_image, max_samples=100)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Model, Loss, Optimizer
