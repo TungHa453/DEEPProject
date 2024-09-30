@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 import random
 from cvt import CvT  # Ensure cvt.py is in the same directory or adjust the import
+import json
+
 
 # Device configuration: GPU or CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -37,9 +39,13 @@ optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
 # Training loop
 num_epochs = 10
+train_accuracies = []
+train_losses = []
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
+    correct = 0
+    total = 0
 
     for inputs, labels in train_loader:
         inputs, labels = inputs.to(device), labels.to(device)
@@ -49,22 +55,29 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
 
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(train_loader):.4f}')
+    epoch_loss = running_loss / len(train_data)
+    epoch_accuracy = 100 * correct / total
 
-    # Validation step
-    model.eval()
-    correct, total = 0, 0
-    with torch.no_grad():
-        for inputs, labels in val_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+    train_losses.append(epoch_loss)
+    train_accuracies.append(epoch_accuracy)
 
-    print(f'Validation Accuracy: {100 * correct / total:.2f}%')
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.2f}%')
 
 # Save the model
 torch.save(model.state_dict(), 'cvt_model.pth')
 print("Model saved as cvt_model.pth")
+
+# Save the training datas
+chartData = {
+    'train_losses': train_losses,
+    'train_accuracies': train_accuracies
+}
+
+with open('chartData.json', 'w') as f:
+    json.dump(chartData, f, indent=4)
+
+print('Trained data saved to chartData.json')
